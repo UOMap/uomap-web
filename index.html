@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="http://openlayers.org/en/v3.9.0/css/ol.css" type="text/css">
+        <style>
+            .map {
+                height: 400px;
+                width: 500px;;
+                background: #000;
+            }
+        </style>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" type="text/javascript"></script>
+        <script src="http://openlayers.org/en/v3.9.0/build/ol.js" type="text/javascript"></script>
+        <title>iUOM Tracker</title>
+    </head>
+    <body>
+        <h2>iUOM Tracker</h2>
+        <p>Server: <span id="server"></span><br>
+        Character: <span id="character"></span><br>
+        <label>Center on character: <input type="checkbox" checked="checked" id="track"></label></p>
+        <div id="map" class="map"></div>
+        <script type="text/javascript">
+            var maps = [
+                {
+                    url: 'mapdata/map0.png',
+                    size: [7196, 4096]
+                },
+                {
+                    url: 'mapdata/map1.png',
+                    size: [6144, 4096]
+                },
+                {
+                    url: 'mapdata/map2.png',
+                    size: [2304, 1600]
+                },
+                {
+                    url: 'mapdata/map3.png',
+                    size: [2560, 2048]
+                },
+                {
+                    url: 'mapdata/map4.png',
+                    size: [1448, 1448]
+                }
+            ];
+
+            var olMaps = [];
+            maps.forEach(function(v,k) {
+                var pp = new ol.proj.Projection({
+                    code: 'pixel',
+                    units: 'pixels',
+                    extent: [0, 0, v.size[0], v.size[1]]
+                });
+
+                olMaps[k] = {
+                    projection: pp,
+                    layer: new ol.layer.Image({
+                        source: new ol.source.ImageStatic({
+                            url: v.url,
+                            imageSize: v.size,
+                            projection: pp,
+                            imageExtent: pp.getExtent()
+                        }),
+                    })
+                };
+            });
+
+            var curMap = -1;
+            var map = new ol.Map({
+                target: 'map',
+                layers: [ ],
+                view: new ol.View()
+            });
+
+            var centerStyle = new ol.style.Style({
+                image: new ol.style.Icon(({
+                    anchor: [0.5,0.5],
+                    anchorXUnits: 'fraction',
+                    anchorYUnits: 'fraction',
+                    src: 'center.png'
+                }))
+            });
+
+            var centerFeature = new ol.Feature({
+                geometry: new ol.geom.Point([0,0])
+            });
+
+            centerFeature.setStyle(centerStyle);
+
+            var centerSource =  new ol.source.Vector({
+                features: [centerFeature],
+            });
+
+            var iconLayer = new ol.layer.Vector({ source: centerSource });
+
+            var currentPosition = [0,0,0];
+            function setPosition(x,y,f) {
+                currentPosition = [x,y,f];
+
+                if (typeof f != 'undefined' && f != curMap) {
+                    var rot = map.getView().getRotation() || Math.PI / 4;
+                    var zoom = map.getView().getZoom() || 4;
+
+                    map.getLayers().forEach(function(layer) {
+                        map.removeLayer(layer);
+                    });
+
+                    map.addLayer(olMaps[f].layer);
+                    map.addLayer(iconLayer);
+
+                    map.setView(new ol.View({
+                        projection: olMaps[f].projection,
+                        center: ol.extent.getCenter(olMaps[f].projection.getExtent()),
+                        rotation: rot,
+                        zoom: zoom
+                    }));
+
+                    curMap = f;
+                }
+
+                var view = map.getView();
+                var proj = view.getProjection();
+                var h = proj.getExtent()[3];
+
+                if ($('#track').prop('checked')) {
+                    view.setCenter([x, h - y]);
+                }
+
+                centerFeature.setGeometry(new ol.geom.Point([x, h - y]));
+            }
+
+            $('#track').bind('change', function() {
+                if ($(this).prop('checked')) {
+                    var view = map.getView();
+                    var proj = view.getProjection();
+                    var h = proj.getExtent()[3];
+                    view.setCenter([currentPosition[0], h - currentPosition[1]]);
+                }
+            });
+
+            setPosition(1323,1624,0);
+
+            var lastAlive = Date.now();
+            function pollStatus() {
+                $.ajax('http://127.0.0.1:27554', {
+                    dataType: 'jsonp',
+                    success: function(data) {
+                        $('#server').text(data.srv);
+                        $('#character').text(data.chr);
+                        setPosition(data.pos.x, data.pos.y, data.pos.f);
+                        setTimeout(pollStatus, 1000);
+                        lastAlive = Date.now();
+                    }
+                });
+            }
+
+            function pollCheck() {
+                var now = Date.now();
+                if (now - lastAlive > 2000) {
+                    $('#server').text("iUOM client not detected...");
+                    $('#character').text('');
+                    setPosition(1323,1624,0);
+                    lastAlive = now;
+                    setTimeout(pollStatus, 1000);
+                }
+            }
+
+            $(function() {
+                pollStatus();
+                setInterval(pollCheck, 1000);
+            });
+        </script>
+    </body>
+</html>
