@@ -1,15 +1,15 @@
 var UOMap = UOMap || {};
 
+UOMap.facets = [
+    "Felucca",
+    "Trammel",
+    "Ilshenar",
+    "Malas",
+    "Tokuno",
+];
+
 UOMap.init = function() {
     var title = document.title;
-
-    var facets = [
-        "Felucca",
-        "Trammel",
-        "Ilshenar",
-        "Malas",
-        "Tokuno",
-    ];
 
     var olMaps = [];
     UOMap.mapdata.OSI.forEach(function(v,k) {
@@ -109,7 +109,7 @@ UOMap.init = function() {
             centerFeature.setGeometry(new ol.geom.Point([x, h - y]));
         }
 
-        $('#map > .charpos').text(x + '.' + y + ' in ' + facets[f]);
+        $('#map > .charpos').text(x + '.' + y + ' in ' + UOMap.facets[f]);
     }
 
     /*
