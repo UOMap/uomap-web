@@ -54,7 +54,7 @@ UOMap.init = function() {
 
     var currentPosition = [0,0,0];
     function setPosition(x,y,f,force) {
-        var moved = (currentPosition.x != x || currentPosition.y != y || currentPosition.f != f);
+        var moved = (currentPosition[0] != x || currentPosition[1] != y || currentPosition[2] != f);
         currentPosition = [x,y,f];
         var force = force || false;
 
