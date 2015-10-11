@@ -3,6 +3,14 @@ var UOMap = UOMap || {};
 UOMap.init = function() {
     var title = document.title;
 
+    var facets = [
+        "Felucca",
+        "Trammel",
+        "Ilshenar",
+        "Malas",
+        "Tokuno",
+    ];
+
     var olMaps = [];
     UOMap.mapdata.OSI.forEach(function(v,k) {
         var pp = new ol.proj.Projection({
@@ -28,7 +36,21 @@ UOMap.init = function() {
     var map = new ol.Map({
         target: 'map',
         layers: [ ],
-        view: new ol.View()
+        view: new ol.View(),
+        controls: []
+    });
+
+    map.on("pointermove", function(e) {
+        var view = map.getView();
+        var proj = view.getProjection();
+        var h = proj.getExtent()[3];
+        $('#map > .mousepos').text(parseInt(e.coordinate[0]) + '.' + parseInt(h - e.coordinate[1]));
+    });
+
+    $('#map').hover(function() {
+        $('#map > .mousepos').show();
+    }, function() {
+        $('#map > .mousepos').hide();
     });
 
     var centerStyle = new ol.style.Style({
@@ -86,6 +108,8 @@ UOMap.init = function() {
             view.setCenter([x, h - y]);
             centerFeature.setGeometry(new ol.geom.Point([x, h - y]));
         }
+
+        $('#map > .charpos').text(x + '.' + y + ' in ' + facets[f]);
     }
 
     /*
