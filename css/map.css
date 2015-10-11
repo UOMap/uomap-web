@@ -16,7 +16,7 @@ body, html {
 #map > .charpos, #map > .mousepos {
     position: absolute;
     color: #ffff84;
-    font-size: 12px;
+    font-size: 9pt;
     font-family: 'Comic Sans MS', cursive, sans-serif;
     text-shadow: 1px 1px #000;
     text-rendering: geometricPrecision;
